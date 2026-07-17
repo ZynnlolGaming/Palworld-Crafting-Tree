@@ -5,136 +5,113 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Palworld Crafting Blueprint Tree</title>
     <style>
-        :root {
-            --bg-main: #181412; 
-            --bg-node: #2c2520;
-            --border-node: #4a3f35;
-            --text-main: #e2dcd5;
-            --text-muted: #a09387;
-            --accent: #eab308;
-            --line-color: #5a4d41;
-        }
-
+        :root { --bg-main: #181412; --bg-node: #2c2520; --border-node: #4a3f35; --text-main: #e2dcd5; --text-muted: #a09387; --accent: #eab308; --line-color: #5a4d41; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-
         body { background-color: var(--bg-main); color: var(--text-main); padding: 2rem 1rem; display: flex; flex-direction: column; align-items: center; }
-
         .container { width: 100%; display: flex; flex-direction: column; align-items: center; }
-
         .controls { background-color: var(--bg-node); border: 2px solid var(--border-node); border-radius: 6px; padding: 1rem 2rem; display: flex; gap: 1.5rem; align-items: center; margin-bottom: 2rem; }
-
-        .form-group { display: flex; align-items: center; gap: 0.75rem; position: relative; }
-
-        label { font-weight: bold; text-transform: uppercase; font-size: 0.85rem; color: var(--text-muted); }
-
-        .input-wrapper { display: flex; align-items: center; background-color: #181412; border: 2px solid var(--border-node); border-radius: 4px; padding: 0.4rem 0.6rem; position: relative; }
-        
-        .icon-preview { width: 28px; height: 28px; margin-right: 0.5rem; display: flex; align-items: center; justify-content: center; }
-        
+        .input-wrapper { display: flex; align-items: center; background-color: #181412; border: 2px solid var(--border-node); border-radius: 4px; padding: 0.4rem 0.6rem; }
         input { background: transparent; border: none; color: var(--text-main); font-size: 1rem; font-weight: bold; outline: none; }
-        
-        #item-search { width: 240px; }
-        #item-qty { width: 60px; }
-
         .clear-btn { cursor: pointer; color: #7f1d1d; font-weight: bold; margin-left: 0.5rem; padding: 0 0.5rem; }
         .clear-btn:hover { color: #ef4444; }
-
-        .search-dropdown { position: absolute; top: 105%; left: 0; right: 0; background-color: var(--bg-node); border: 2px solid var(--border-node); border-radius: 4px; max-height: 300px; overflow-y: auto; display: none; z-index: 999; }
-        
-        .dropdown-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0.75rem; cursor: pointer; }
-        .dropdown-item:hover { background-color: #3d332c; }
-
         .tree-viewport { width: 100%; display: flex; justify-content: center; overflow: hidden; padding: 2rem 0; }
         .blueprint-tree { display: inline-flex; justify-content: center; transform-origin: top center; transition: transform 0.1s ease-out; }
-        
         .tree-branch { display: flex; flex-direction: column; align-items: center; position: relative; padding: 0 0.5rem; }
         .tree-branch:not(.is-root)::before { content: ''; position: absolute; top: 0; left: 50%; width: 2px; height: 20px; background-color: var(--line-color); }
-        
         .craft-node { background-color: var(--bg-node); border: 2px solid var(--border-node); border-radius: 4px; padding: 0.5rem 0.75rem; min-width: 180px; display: flex; align-items: center; gap: 0.65rem; margin-top: 20px; position: relative; z-index: 10; }
         .craft-node.has-children::after { content: ''; position: absolute; bottom: -20px; left: 50%; width: 2px; height: 20px; background-color: var(--line-color); }
-        
-        .node-icon { width: 32px; height: 32px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-        .node-info { display: flex; flex-direction: column; text-align: left; }
-        .node-name { font-weight: 600; font-size: 0.85rem; white-space: nowrap; }
-        .node-count { color: var(--accent); font-weight: bold; font-size: 0.85rem; }
-
+        .node-icon { width: 32px; height: 32px; flex-shrink: 0; }
         .children-container { display: flex; justify-content: center; align-items: flex-start; position: relative; padding-top: 20px; margin-top: 20px; }
         .total-cost-summary { margin-top: 3rem; border-top: 2px solid var(--border-node); padding-top: 1.5rem; width: 100%; max-width: 1000px; text-align: center; }
         .cost-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 1rem; }
-        .cost-badge { background-color: var(--bg-node); border: 2px solid var(--border-node); padding: 0.4rem 0.75rem; border-radius: 4px; font-size: 0.85rem; display: flex; gap: 0.5rem; align-items: center; }
-        .cost-val { color: #4ade80; font-weight: bold; }
+        .cost-badge { background-color: var(--bg-node); border: 2px solid var(--border-node); padding: 0.4rem 0.75rem; border-radius: 4px; display: flex; gap: 0.5rem; align-items: center; }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="controls">
-        <div class="form-group">
-            <label>Item:</label>
-            <div class="input-wrapper">
-                <div id="selected-item-icon" class="icon-preview"></div>
-                <input type="text" id="item-search" autocomplete="off">
-                <span class="clear-btn" onclick="clearInput('item-search')">X</span>
+    <div class="container">
+        <div class="controls">
+            <div class="form-group">
+                <label>Item:</label>
+                <div class="input-wrapper">
+                    <div id="selected-item-icon" style="width:28px; height:28px;"></div>
+                    <input type="text" id="item-search" value="AI Core">
+                    <span class="clear-btn" onclick="clearSearch()">X</span>
+                </div>
             </div>
-            <div class="search-dropdown" id="search-dropdown"></div>
-        </div>
-        <div class="form-group">
-            <label for="item-qty">Quantity:</label>
-            <div class="input-wrapper">
-                <input type="number" id="item-qty" value="20" min="1">
-                <span class="clear-btn" onclick="clearInput('item-qty')">X</span>
+            <div class="form-group">
+                <label>Quantity:</label>
+                <div class="input-wrapper">
+                    <input type="number" id="item-qty" value="20" min="1" oninput="calculate()">
+                    <span class="clear-btn" onclick="clearQty()">X</span>
+                </div>
             </div>
         </div>
+        <div class="tree-viewport"><div class="blueprint-tree" id="tree-canvas"></div></div>
+        <div class="total-cost-summary"><h3>Total Raw Base Cost</h3><div class="cost-row" id="summary-row"></div></div>
     </div>
-
-    <div class="tree-viewport">
-        <div class="blueprint-tree" id="tree-canvas"></div>
-    </div>
-
-    <div class="total-cost-summary">
-        <h3>Total Raw Base Cost</h3>
-        <div class="cost-row" id="summary-row"></div>
-    </div>
-</div>
 
 <script>
-    function clearInput(id) {
-        if(id === 'item-qty') document.getElementById(id).value = 1;
-        else { document.getElementById(id).value = ''; document.getElementById('search-dropdown').style.display = 'none'; }
-        calculate();
-    }
-
     const itemDataMap = {
         "AI Core": "Material_AIcore",
+        "Computer": "Material_Computer",
         "Soralite Ingot": "Material_SkyislandIngot",
+        "Thermal Core": "Material_Thermal_Core",
+        "Ancient Civilization Core": "Material_BossTrophy_2",
+        "Circuit Board": "Material_MachineParts2",
+        "Bio Battery": "Material_BioBattery",
+        "Polymer": "Material_Polymer",
+        "Soralite Ore": "Material_SkyIslandOre",
         "Paldium Fragment": "Material_Pal_crystal_S",
-        "Thermal Core": "Material_Thermal_Core"
+        "Flame Organ": "Material_FireOrgan",
+        "Refined Ingot": "Material_SteelIngot",
+        "Pal Fluids": "Material_PalFluid",
+        "Pure Quartz": "Material_Quartz",
+        "Electric Organ": "Material_ElectricOrgan",
+        "High Quality Pal Oil": "Material_PalOil"
     };
-
-    function getIconHTML(itemName) {
-        const id = itemDataMap[itemName] || itemName.replace(/\s+/g, '');
-        return `<img src="https://palworld.gg/_ipx/q_80&s_52x52/images/items/T_itemicon_${id}.png" 
-                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                     style="width: 100%; height: 100%; object-fit: contain;" alt="${itemName}">
-                <div style="display:none; width:100%; height:100%; align-items:center; justify-content:center; background:#2c2520; color:#a09387; font-weight:bold; font-size:10px;">
-                    ${itemName.substring(0, 2).toUpperCase()}
-                </div>`;
-    }
 
     const recipes = {
-        "AI Core": { materials: [{ name: "Computer", qty: 5 }, { name: "Soralite Ingot", qty: 10 }, { name: "Thermal Core", qty: 2 }] }
-        // ... (Keep your full recipes here)
+        "AI Core": { materials: [{ name: "Computer", qty: 5 }, { name: "Soralite Ingot", qty: 10 }, { name: "Thermal Core", qty: 2 }, { name: "Ancient Civilization Core", qty: 1 }] },
+        "Computer": { materials: [{ name: "Circuit Board", qty: 2 }, { name: "Bio Battery", qty: 2 }, { name: "Polymer", qty: 1 }] },
+        "Soralite Ingot": { materials: [{ name: "Soralite Ore", qty: 2 }, { name: "Paldium Fragment", qty: 1 }] },
+        "Thermal Core": { materials: [{ name: "Flame Organ", qty: 5 }, { name: "Refined Ingot", qty: 3 }, { name: "Pal Fluids", qty: 1 }] },
+        "Circuit Board": { materials: [{ name: "Pure Quartz", qty: 4 }, { name: "Polymer", qty: 2 }] },
+        "Bio Battery": { materials: [{ name: "Electric Organ", qty: 5 }, { name: "High Quality Pal Oil", qty: 3 }] }
     };
 
-    let activeItem = "AI Core";
-    const canvas = document.getElementById('tree-canvas');
-
-    function calculate() {
-        // ... (Include your existing calculation and rendering logic)
+    function getIconHTML(name) {
+        const id = itemDataMap[name] || name.replace(/\s+/g, '');
+        return `<img src="https://palworld.gg/_ipx/q_80&s_52x52/images/items/T_itemicon_${id}.png" style="width:32px; height:32px; object-fit:contain;" alt="${name}" onerror="this.style.display='none'">`;
     }
 
-    // Initialize...
-    window.onload = calculate;
+    function clearSearch() { document.getElementById('item-search').value = ''; calculate(); }
+    function clearQty() { document.getElementById('item-qty').value = 1; calculate(); }
+
+    function calculate() {
+        const qty = parseInt(document.getElementById('item-qty').value) || 1;
+        const root = document.getElementById('item-search').value;
+        const canvas = document.getElementById('tree-canvas');
+        canvas.innerHTML = '';
+        if(recipes[root]) {
+            canvas.appendChild(render(root, qty));
+        }
+    }
+
+    function render(name, qty) {
+        const branch = document.createElement('div');
+        branch.className = 'tree-branch';
+        branch.innerHTML = `<div class="craft-node">${getIconHTML(name)}<div class="node-info"><span class="node-name">${name}</span><span class="node-count">[x${qty}]</span></div></div>`;
+        if(recipes[name]) {
+            const children = document.createElement('div');
+            children.className = 'children-container';
+            recipes[name].materials.forEach(m => children.appendChild(render(m.name, m.qty * qty)));
+            branch.appendChild(children);
+        }
+        return branch;
+    }
+
+    document.getElementById('item-search').oninput = calculate;
+    calculate();
 </script>
 </body>
 </html>
