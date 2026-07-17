@@ -313,7 +313,6 @@
 </div>
 
 <script>
-    // Global Error Delegate for Images (Bypasses GitHub Pages CSP)
     document.addEventListener('error', function(e) {
         if (e.target.tagName && e.target.tagName.toLowerCase() === 'img' && e.target.hasAttribute('data-urls')) {
             const img = e.target;
@@ -328,7 +327,6 @@
                 img.dataset.step = step;
                 img.src = urls[step];
             } else {
-                // If all URLs fail, generate the SVG safely in the DOM
                 const initials = (img.alt || 'XX').substring(0, 2).toUpperCase();
                 const svgNS = "http://www.w3.org/2000/svg";
                 const svg = document.createElementNS(svgNS, "svg");
@@ -366,48 +364,45 @@
     }, true);
 
     const itemDataMap = {
-        "AI Core": "AIcore",
-        "Computer": "Computer",
-        "Soralite Ingot": "SkyIslandIngot",
-        "Thermal Core": "ThermalCore",
-        "Ancient Civilization Core": "BossTrophy_2",
-        "Circuit Board": "MachineParts2",
-        "Bio Battery": "BioBattery",
-        "Polymer": "Polymer",
-        "Soralite Ore": "SkyIslandOre",
-        "Paldium Fragment": "PalItem_Fragment",
-        "Flame Organ": "FireOrgan",
-        "Refined Ingot": "SteelIngot",
-        "Pal Fluids": "PalFluid",
-        "Pure Quartz": "Quartz",
-        "Electric Organ": "ElectricOrgan",
-        "High Quality Pal Oil": "PalOil",
-        "Carbon Fiber": "CarbonFiber",
-        "Cement": "Cement",
-        "Gunpowder": "Gunpowder",
-        "Charcoal": "Charcoal",
-        "Ingot": "CopperIngot",
-        "Pal Metal Ingot": "PalMetal",
-        "Plasteel": "Plasteel",
-        "Coal": "Coal",
-        "Wood": "Wood",
-        "Stone": "Stone",
-        "Bone": "Bone",
-        "Sulfur": "Sulfur",
-        "Ore": "CopperOre",
-        "Crude Oil": "CrudeOil"
+        "AI Core": "Material_AIcore",
+        "Computer": "Material_Computer",
+        "Soralite Ingot": "Material_SkyIslandIngot",
+        "Thermal Core": "Material_ThermalCore",
+        "Ancient Civilization Core": "Material_BossTrophy_2",
+        "Circuit Board": "Material_MachineParts2",
+        "Bio Battery": "Material_BioBattery",
+        "Polymer": "Material_Polymer",
+        "Soralite Ore": "Material_SkyIslandOre",
+        "Paldium Fragment": "Material_PalItem_Fragment",
+        "Flame Organ": "Material_FireOrgan",
+        "Refined Ingot": "Material_SteelIngot",
+        "Pal Fluids": "Material_PalFluid",
+        "Pure Quartz": "Material_Quartz",
+        "Electric Organ": "Material_ElectricOrgan",
+        "High Quality Pal Oil": "Material_PalOil",
+        "Carbon Fiber": "Material_CarbonFiber",
+        "Cement": "Material_Cement",
+        "Gunpowder": "Material_Gunpowder",
+        "Charcoal": "Material_Charcoal",
+        "Ingot": "Material_CopperIngot",
+        "Pal Metal Ingot": "Material_PalMetal",
+        "Plasteel": "Material_Plasteel",
+        "Coal": "Material_Coal",
+        "Wood": "Material_Wood",
+        "Stone": "Material_Stone",
+        "Bone": "Material_Bone",
+        "Sulfur": "Material_Sulfur",
+        "Ore": "Material_CopperOre",
+        "Crude Oil": "Material_CrudeOil"
     };
 
     function getIconHTML(itemName) {
-        const defaultSlug = itemName.toLowerCase().replace(/[\s\']+/g, '_');
-        const mappedId = itemDataMap[itemName] || defaultSlug;
-
-        // Sequence: Direct (no-referrer) -> AllOrigins Proxy -> CORS Proxy -> Fallback Database
+        const mappedId = itemDataMap[itemName] || itemName.toLowerCase().replace(/[\s\']+/g, '_');
+        
+        // Target the IPX endpoint exactly as you discovered it
         const urls = [
-            `https://paldb.cc/images/items/${mappedId}.png`,
-            `https://api.allorigins.win/raw?url=https://paldb.cc/images/items/${mappedId}.png`,
-            `https://corsproxy.io/?https://paldb.cc/images/items/${mappedId}.png`,
-            `https://palworld.gg/images/items/${defaultSlug}.png`
+            `https://palworld.gg/_ipx/q_80&s_52x52/images/items/T_itemicon_${mappedId}.png`,
+            `https://palworld.gg/_ipx/q_80&s_52x52/images/items/${mappedId}.png`
         ];
         
         return `<img src="${urls[0]}" 
@@ -509,102 +504,6 @@
                 { name: "Crude Oil", qty: 5 },
                 { name: "Paldium Fragment", qty: 5 },
                 { name: "Ore", qty: 10 }
-            ]
-        },
-        "Pal Sphere": {
-            materials: [
-                { name: "Paldium Fragment", qty: 1 },
-                { name: "Wood", qty: 3 },
-                { name: "Stone", qty: 3 }
-            ]
-        },
-        "Mega Sphere": {
-            materials: [
-                { name: "Paldium Fragment", qty: 1 },
-                { name: "Ingot", qty: 1 },
-                { name: "Wood", qty: 5 },
-                { name: "Stone", qty: 5 }
-            ]
-        },
-        "Giga Sphere": {
-            materials: [
-                { name: "Paldium Fragment", qty: 2 },
-                { name: "Ingot", qty: 2 },
-                { name: "Wood", qty: 7 },
-                { name: "Stone", qty: 7 }
-            ]
-        },
-        "Hyper Sphere": {
-            materials: [
-                { name: "Paldium Fragment", qty: 3 },
-                { name: "Ingot", qty: 3 },
-                { name: "Wood", qty: 10 },
-                { name: "Cement", qty: 2 }
-            ]
-        },
-        "Ultra Sphere": {
-            materials: [
-                { name: "Paldium Fragment", qty: 5 },
-                { name: "Refined Ingot", qty: 5 },
-                { name: "Carbon Fiber", qty: 2 },
-                { name: "Cement", qty: 3 }
-            ]
-        },
-        "Legendary Sphere": {
-            materials: [
-                { name: "Paldium Fragment", qty: 10 },
-                { name: "Pal Metal Ingot", qty: 5 },
-                { name: "Carbon Fiber", qty: 3 },
-                { name: "Cement", qty: 5 }
-            ]
-        },
-        "Radar Sphere": {
-            materials: [
-                { name: "Paldium Fragment", qty: 20 },
-                { name: "Plasteel", qty: 10 },
-                { name: "Carbon Fiber", qty: 5 }
-            ]
-        },
-        "Arrow": {
-            materials: [
-                { name: "Wood", qty: 1 },
-                { name: "Stone", qty: 1 }
-            ]
-        },
-        "Coarse Ammo": {
-            materials: [
-                { name: "Ingot", qty: 1 },
-                { name: "Gunpowder", qty: 1 }
-            ]
-        },
-        "Handgun Ammo": {
-            materials: [
-                { name: "Ingot", qty: 1 },
-                { name: "Gunpowder", qty: 1 }
-            ]
-        },
-        "Rifle Ammo": {
-            materials: [
-                { name: "Refined Ingot", qty: 1 },
-                { name: "Gunpowder", qty: 2 }
-            ]
-        },
-        "Shotgun Shells": {
-            materials: [
-                { name: "Refined Ingot", qty: 1 },
-                { name: "Gunpowder", qty: 3 }
-            ]
-        },
-        "Assault Rifle Ammo": {
-            materials: [
-                { name: "Refined Ingot", qty: 1 },
-                { name: "Gunpowder", qty: 2 }
-            ]
-        },
-        "Rocket Ammo": {
-            materials: [
-                { name: "Pal Metal Ingot", qty: 1 },
-                { name: "Gunpowder", qty: 5 }
             ]
         }
     };
