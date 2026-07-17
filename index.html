@@ -5,24 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Palworld Crafting Blueprint Tree</title>
     <style>
-        :root { --bg-main: #181412; --bg-node: #2c2520; --border-node: #4a3f35; --text-main: #e2dcd5; --accent: #eab308; --line-color: #5a4d41; --count-color: #eab308; }
+        :root { --bg-main: #181412; --bg-node: #2c2520; --border-node: #4a3f35; --text-main: #e2dcd5; --accent: #eab308; --line-color: #5a4d41; }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { background-color: var(--bg-main); color: var(--text-main); padding: 2rem; display: flex; flex-direction: column; align-items: center; }
         .controls { background: var(--bg-node); border: 2px solid var(--border-node); padding: 1rem 2rem; display: flex; gap: 2rem; margin-bottom: 2rem; border-radius: 6px; }
         .input-wrapper { display: flex; align-items: center; background: #181412; border: 2px solid var(--border-node); padding: 0.4rem; border-radius: 4px; position: relative; }
-        input { background: transparent; border: none; color: white; padding: 0.5rem; font-weight: bold; outline: none; }
-        .clear-btn { cursor: pointer; color: #7f1d1d; font-weight: bold; padding: 0 0.5rem; }
-        .search-dropdown { position: absolute; top: 100%; left: 0; background: var(--bg-node); border: 1px solid var(--border-node); width: 100%; display: none; z-index: 100; }
-        .dropdown-item { padding: 0.5rem; cursor: pointer; }
+        input { background: transparent; border: none; color: white; padding: 0.5rem; font-weight: bold; outline: none; width: 200px; }
+        .search-dropdown { position: absolute; top: 100%; left: 0; background: var(--bg-node); border: 1px solid var(--border-node); width: 100%; max-height: 400px; overflow-y: auto; display: none; z-index: 100; }
+        .dropdown-item { padding: 0.8rem; cursor: pointer; border-bottom: 1px solid var(--border-node); display: flex; align-items: center; gap: 0.5rem; }
         .dropdown-item:hover { background: #3d332c; }
         .tree-viewport { width: 100%; display: flex; justify-content: center; }
         .tree-branch { display: flex; flex-direction: column; align-items: center; position: relative; padding-top: 1rem; }
-        .tree-branch::before { content: ''; position: absolute; top: 0; left: 50%; width: 2px; height: 1rem; background: var(--line-color); }
         .craft-node { background: var(--bg-node); border: 1px solid var(--border-node); padding: 0.5rem; display: flex; align-items: center; gap: 0.5rem; border-radius: 4px; }
-        .node-name { font-weight: bold; font-size: 0.85rem; }
-        .node-count { color: var(--count-color); font-weight: bold; }
+        .node-count { color: var(--accent); font-weight: bold; }
         .children-container { display: flex; justify-content: center; border-top: 2px solid var(--line-color); margin-top: 1rem; }
-        .total-cost-summary { margin-top: 3rem; border-top: 2px solid var(--border-node); padding-top: 1rem; width: 100%; text-align: center; }
         .cost-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 1rem; margin-top: 1rem; }
         .cost-badge { background: var(--bg-node); border: 1px solid var(--border-node); padding: 0.5rem; border-radius: 4px; display: flex; align-items: center; gap: 0.5rem; }
     </style>
@@ -30,69 +26,68 @@
 <body>
     <div class="controls">
         <div class="input-wrapper">
-            <input type="text" id="item-search" placeholder="Search Item..." oninput="filterSearch()">
-            <span class="clear-btn" onclick="clearInput('item-search')">X</span>
+            <input type="text" id="item-search" placeholder="Search Item..." oninput="filterSearch()" onfocus="filterSearch()">
             <div id="search-dropdown" class="search-dropdown"></div>
         </div>
-        <div class="input-wrapper">
-            <input type="number" id="item-qty" value="20" min="1" oninput="calculate()">
-            <span class="clear-btn" onclick="clearQty()">X</span>
-        </div>
+        <div class="input-wrapper"><input type="number" id="item-qty" value="20" min="1" oninput="calculate()"></div>
     </div>
     <div id="tree-canvas" class="tree-viewport"></div>
     <div class="total-cost-summary"><h3>Total Raw Base Cost</h3><div id="summary-row" class="cost-row"></div></div>
 
 <script>
-    const itemDataMap = { "AI Core": "Material_AIcore", "Computer": "Material_Computer", "Soralite Ingot": "Material_SkyislandIngot", "Thermal Core": "Material_Thermal_Core", "Ancient Civilization Core": "Material_BossTrophy_2", "Circuit Board": "Material_MachineParts2", "Bio Battery": "Material_BioBattery", "Polymer": "Material_Polymer", "Soralite Ore": "Material_SkyIslandOre", "Paldium Fragment": "Material_Pal_crystal_S", "Flame Organ": "Material_FireOrgan", "Refined Ingot": "Material_SteelIngot", "Pal Fluids": "Material_PalFluid", "Pure Quartz": "Material_Quartz", "Electric Organ": "Material_ElectricOrgan", "High Quality Pal Oil": "Material_PalOil" };
-    const recipes = {
-        "AI Core": { materials: [{ name: "Computer", qty: 5 }, { name: "Soralite Ingot", qty: 10 }, { name: "Thermal Core", qty: 2 }, { name: "Ancient Civilization Core", qty: 1 }] },
-        "Computer": { materials: [{ name: "Circuit Board", qty: 2 }, { name: "Bio Battery", qty: 2 }, { name: "Polymer", qty: 1 }] },
-        "Soralite Ingot": { materials: [{ name: "Soralite Ore", qty: 2 }, { name: "Paldium Fragment", qty: 1 }] },
-        "Thermal Core": { materials: [{ name: "Flame Organ", qty: 5 }, { name: "Refined Ingot", qty: 3 }, { name: "Pal Fluids", qty: 1 }] },
-        "Circuit Board": { materials: [{ name: "Pure Quartz", qty: 4 }, { name: "Polymer", qty: 2 }] },
-        "Bio Battery": { materials: [{ name: "Electric Organ", qty: 5 }, { name: "High Quality Pal Oil", qty: 3 }] }
+    const itemData = {
+        "AI Core": "Material_AIcore", "Computer": "Material_Computer", "Soralite Ingot": "Material_SkyislandIngot",
+        "Thermal Core": "Material_Thermal_Core", "Circuit Board": "Material_MachineParts2", "Polymer": "Material_Polymer",
+        "Refined Ingot": "Material_SteelIngot", "Cement": "Material_Cement", "Pal Metal Ingot": "Material_PalMetal",
+        "Carbon Fiber": "Material_CarbonFiber", "Gunpowder": "Material_Gunpowder", "Plasteel": "Material_Plasteel",
+        "Mega Sphere": "Material_SphereMega", "Giga Sphere": "Material_SphereGiga", "Hyper Sphere": "Material_SphereHyper"
     };
-    let baseTotals = {}, activeItem = "AI Core";
 
-    function getIcon(name) { return `<img src="https://palworld.gg/_ipx/q_80&s_52x52/images/items/T_itemicon_${itemDataMap[name] || name.replace(/\s+/g, '')}.png" style="width:32px; height:32px;" onerror="this.style.display='none'">`; }
-    
+    const recipes = {
+        "AI Core": { materials: [{ name: "Computer", qty: 5 }, { name: "Soralite Ingot", qty: 10 }, { name: "Thermal Core", qty: 2 }] },
+        "Computer": { materials: [{ name: "Circuit Board", qty: 2 }, { name: "Polymer", qty: 1 }] },
+        "Mega Sphere": { materials: [{ name: "Paldium Fragment", qty: 1 }, { name: "Ingot", qty: 1 }, { name: "Wood", qty: 5 }] },
+        "Giga Sphere": { materials: [{ name: "Paldium Fragment", qty: 2 }, { name: "Ingot", qty: 2 }, { name: "Wood", qty: 7 }] }
+    };
+
+    function getIcon(name) { 
+        const id = itemData[name] || name.replace(/\s+/g, '');
+        return `<img src="https://palworld.gg/_ipx/q_80&s_52x52/images/items/T_itemicon_${id}.png" style="width:32px; height:32px;" onerror="this.style.display='none'">`; 
+    }
+
     function filterSearch() {
         const val = document.getElementById('item-search').value.toLowerCase();
         const drop = document.getElementById('search-dropdown');
         drop.innerHTML = '';
         Object.keys(recipes).filter(i => i.toLowerCase().includes(val)).forEach(item => {
-            drop.innerHTML += `<div class="dropdown-item" onclick="selectItem('${item}')">${item}</div>`;
+            drop.innerHTML += `<div class="dropdown-item" onclick="selectItem('${item}')">${getIcon(item)}${item}</div>`;
         });
-        drop.style.display = val ? 'block' : 'none';
+        drop.style.display = 'block';
     }
 
-    function selectItem(name) { activeItem = name; document.getElementById('item-search').value = name; document.getElementById('search-dropdown').style.display = 'none'; calculate(); }
-    function clearInput(id) { document.getElementById(id).value = ''; calculate(); }
-    function clearQty() { document.getElementById('item-qty').value = 1; calculate(); }
+    function selectItem(name) { document.getElementById('item-search').value = name; document.getElementById('search-dropdown').style.display = 'none'; calculate(); }
 
     function calculate() {
         const qty = parseInt(document.getElementById('item-qty').value) || 1;
+        const root = document.getElementById('item-search').value;
         const canvas = document.getElementById('tree-canvas');
         const summary = document.getElementById('summary-row');
-        canvas.innerHTML = ''; summary.innerHTML = ''; baseTotals = {};
-        if(recipes[activeItem]) {
-            canvas.appendChild(render(activeItem, qty));
-            Object.keys(baseTotals).forEach(name => {
-                summary.innerHTML += `<div class="cost-badge">${getIcon(name)}<span>${name}<span class="node-count">[x${baseTotals[name]}]</span></span></div>`;
-            });
+        canvas.innerHTML = ''; summary.innerHTML = '';
+        if(recipes[root]) {
+            canvas.appendChild(render(root, qty));
         }
     }
 
     function render(name, qty) {
         const branch = document.createElement('div');
         branch.className = 'tree-branch';
-        branch.innerHTML = `<div class="craft-node">${getIcon(name)}<span class="node-name">${name}<span class="node-count">[x${qty}]</span></span></div>`;
+        branch.innerHTML = `<div class="craft-node">${getIcon(name)}<span>${name}<span class="node-count">[x${qty}]</span></span></div>`;
         if(recipes[name]) {
             const children = document.createElement('div');
             children.className = 'children-container';
             recipes[name].materials.forEach(m => children.appendChild(render(m.name, m.qty * qty)));
             branch.appendChild(children);
-        } else { baseTotals[name] = (baseTotals[name] || 0) + qty; }
+        }
         return branch;
     }
     calculate();
