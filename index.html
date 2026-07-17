@@ -307,30 +307,64 @@
 </div>
 
 <script>
+    const itemDataMap = {
+        "AI Core": "AIcore",
+        "Computer": "Computer",
+        "Soralite Ingot": "SkyIslandIngot",
+        "Thermal Core": "ThermalCore",
+        "Ancient Civilization Core": "BossTrophy_2",
+        "Circuit Board": "MachineParts2",
+        "Bio Battery": "BioBattery",
+        "Polymer": "Polymer",
+        "Soralite Ore": "SkyIslandOre",
+        "Paldium Fragment": "PalItem_Fragment",
+        "Flame Organ": "FireOrgan",
+        "Refined Ingot": "SteelIngot",
+        "Pal Fluids": "PalFluid",
+        "Pure Quartz": "Quartz",
+        "Electric Organ": "ElectricOrgan",
+        "High Quality Pal Oil": "PalOil",
+        "Carbon Fiber": "CarbonFiber",
+        "Cement": "Cement",
+        "Gunpowder": "Gunpowder",
+        "Charcoal": "Charcoal",
+        "Ingot": "CopperIngot",
+        "Pal Metal Ingot": "PalMetal",
+        "Plasteel": "Plasteel",
+        "Coal": "Coal",
+        "Wood": "Wood",
+        "Stone": "Stone",
+        "Bone": "Bone",
+        "Sulfur": "Sulfur",
+        "Ore": "CopperOre",
+        "Crude Oil": "CrudeOil"
+    };
+
     function getIconHTML(itemName) {
-        const slug = itemName.toLowerCase().replace(/[\s\']+/g, '_');
+        const defaultSlug = itemName.toLowerCase().replace(/[\s\']+/g, '_');
+        const mappedId = itemDataMap[itemName] || defaultSlug;
+
+        const urls = [
+            `https://paldb.cc/images/items/${mappedId}.png`,
+            `https://paldb.cc/images/items/${defaultSlug}.png`,
+            `https://external-content.duckduckgo.com/iu/?u=${encodeURIComponent('https://palworld.gg/images/items/' + defaultSlug + '.png')}`,
+            `https://zilliongamer.com/uploads/palworld/items/${defaultSlug}.png`
+        ];
+
         const initials = itemName.substring(0, 2).toUpperCase();
-        
-        // Generates a perfect fallback square with the item initials if all databases are dead
         const fallbackSVG = "data:image/svg+xml," + encodeURIComponent(`<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="4" fill="#2c2520" stroke="#4a3f35" stroke-width="2"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#a09387" font-size="12" font-family="sans-serif" font-weight="bold">${initials}</text></svg>`);
         
-        // Start by trying the fully qualified wsrv proxy
-        const initialSrc = `https://wsrv.nl/?url=https://palworld.gg/images/items/${slug}.png`;
-        
-        return `<img src="${initialSrc}" 
+        return `<img src="${urls[0]}" 
                      style="width: 100%; height: 100%; object-fit: contain;" 
                      alt="${itemName}"
-                     data-slug="${slug}"
+                     data-urls='${JSON.stringify(urls)}'
                      data-step="0"
                      onerror="
-                        const fallbackSources = [
-                            'https://paldb.cc/images/items/' + this.dataset.slug + '.png',
-                            'https://zilliongamer.com/uploads/palworld/items/' + this.dataset.slug + '.png'
-                        ];
-                        let step = parseInt(this.dataset.step);
-                        if (step < fallbackSources.length) {
-                            this.src = fallbackSources[step];
-                            this.dataset.step = step + 1;
+                        let step = parseInt(this.dataset.step) + 1;
+                        let urls = JSON.parse(this.dataset.urls);
+                        if (step < urls.length) {
+                            this.src = urls[step];
+                            this.dataset.step = step;
                         } else {
                             this.onerror = null;
                             this.src = '${fallbackSVG}';
