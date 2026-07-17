@@ -309,14 +309,33 @@
 <script>
     function getIconHTML(itemName) {
         const slug = itemName.toLowerCase().replace(/[\s\']+/g, '_');
-        const proxyUrl = `https://wsrv.nl/?url=palworld.gg/images/items/${slug}.png`;
         const initials = itemName.substring(0, 2).toUpperCase();
-        const fallbackSVG = `<svg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'><rect width='32' height='32' rx='4' fill='%232c2520' stroke='%234a3f35' stroke-width='2'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23a09387' font-size='12' font-family='sans-serif' font-weight='bold'>${initials}</text></svg>`;
         
-        return `<img src="${proxyUrl}" 
+        // Generates a perfect fallback square with the item initials if all databases are dead
+        const fallbackSVG = "data:image/svg+xml," + encodeURIComponent(`<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="4" fill="#2c2520" stroke="#4a3f35" stroke-width="2"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#a09387" font-size="12" font-family="sans-serif" font-weight="bold">${initials}</text></svg>`);
+        
+        // Start by trying the fully qualified wsrv proxy
+        const initialSrc = `https://wsrv.nl/?url=https://palworld.gg/images/items/${slug}.png`;
+        
+        return `<img src="${initialSrc}" 
                      style="width: 100%; height: 100%; object-fit: contain;" 
-                     alt="${itemName}" 
-                     onerror="this.onerror=null; this.src='data:image/svg+xml,${fallbackSVG}';">`;
+                     alt="${itemName}"
+                     data-slug="${slug}"
+                     data-step="0"
+                     onerror="
+                        const fallbackSources = [
+                            'https://paldb.cc/images/items/' + this.dataset.slug + '.png',
+                            'https://zilliongamer.com/uploads/palworld/items/' + this.dataset.slug + '.png'
+                        ];
+                        let step = parseInt(this.dataset.step);
+                        if (step < fallbackSources.length) {
+                            this.src = fallbackSources[step];
+                            this.dataset.step = step + 1;
+                        } else {
+                            this.onerror = null;
+                            this.src = '${fallbackSVG}';
+                        }
+                     ">`;
     }
 
     const recipes = {
