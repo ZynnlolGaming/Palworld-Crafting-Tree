@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Palworld Crafting Blueprint Tree</title>
+    <style>
+        :root {
+            --bg-main: #181412; 
+            --bg-node: #2c2520;
+            --border-node: #4a3f35;
+            --text-main: #e2dcd5;
+            --text-muted: #a09387;
+            --accent: #eab308;
+            --line-color: #5a4d41;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            padding: 2rem 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .controls {
+            background-color: var(--bg-node);
+            border: 2px solid var(--border-node);
+            border-radius: 6px;
+            padding: 1rem 2rem;
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            margin-bottom: 2rem;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .form-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            position: relative;
+        }
+
+        label {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .search-container {
+            position: relative;
+            width: 280px;
+        }
+
+        .search-input-wrapper {
+            display: flex;
+            align-items: center;
+            background-color: #181412;
+            border: 2px solid var(--border-node);
+            border-radius: 4px;
+            padding: 0.4rem 0.6rem;
+        }
+
+        .search-input-wrapper .icon-preview {
+            width: 28px;
+            height: 28px;
+            margin-right: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-input-wrapper input {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 1rem;
+            font-weight: bold;
+            outline: none;
+            width: 100%;
+        }
+
+        input[type="number"] {
+            background-color: #181412;
+            border: 2px solid var(--border-node);
+            padding: 0.5rem 0.75rem;
+            color: var(--text-main);
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 4px;
+            outline: none;
+            width: 100px;
+        }
+
+        .search-dropdown {
+            position: absolute;
+            top: 105%;
+            left: 0;
+            right: 0;
+            background-color: var(--bg-node);
+            border: 2px solid var(--border-node);
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            z-index: 999;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+        }
+
+        .dropdown-item:hover {
+            background-color: #3d332c;
+        }
+
+        .dropdown-item .item-icon-frame {
+            width: 24px;
+            height: 24px;
+        }
+
+        .tree-viewport {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 2rem 0;
+            overflow: hidden; 
+        }
+
+        .blueprint-tree {
+            display: inline-flex;
+            justify-content: center;
+            transform-origin: top center; 
+            transition: transform 0.1s ease-out;
+        }
+
+        .tree-branch {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            padding: 0 0.5rem;
+        }
+
+        .tree-branch:not(.is-root)::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 2px;
+            height: 20px;
+            background-color: var(--line-color);
+        }
+
+        .craft-node {
+            background-color: var(--bg-node);
+            border: 2px solid var(--border-node);
+            border-radius: 4px;
+            padding: 0.5rem 0.75rem;
+            min-width: 180px;
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            position: relative;
+            z-index: 10;
+            margin-top: 20px; 
+        }
+
+        .craft-node.has-children::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            width: 2px;
+            height: 20px;
+            background-color: var(--line-color);
+        }
+
+        .node-icon {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+        }
+
+        .node-info {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .node-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            white-space: nowrap;
+        }
+
+        .node-count {
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .children-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            position: relative;
+            padding-top: 20px; 
+            margin-top: 20px;
+        }
+
+        .children-container > .tree-branch:first-child:not(:only-child) {
+            position: relative;
+        }
+
+        .total-cost-summary {
+            margin-top: 3rem;
+            border-top: 2px solid var(--border-node);
+            padding-top: 1.5rem;
+            width: 100%;
+            max-width: 1000px;
+            text-align: center;
+        }
+
+        .total-cost-summary h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+        }
+
+        .cost-row {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .cost-badge {
+            background-color: var(--bg-node);
+            border: 2px solid var(--border-node);
+            padding: 0.4rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .cost-val {
+            color: #4ade80;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="controls">
+        <div class="form-group">
+            <label>Item:</label>
+            <div class="search-container">
+                <div class="search-input-wrapper">
+                    <div id="selected-item-icon" class="icon-preview"></div>
+                    <input type="text" id="item-search" autocomplete="off">
+                </div>
+                <div class="search-dropdown" id="search-dropdown"></div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="item-qty">Quantity:</label>
+            <input type="number" id="item-qty" value="20" min="1">
+        </div>
+    </div>
+
+    <div class="tree-viewport">
+        <div class="blueprint-tree" id="tree-canvas"></div>
+    </div>
+
+    <div class="total-cost-summary">
+        <h3>Total Raw Base Cost</h3>
+        <div class="cost-row" id="summary-row"></div>
+    </div>
+</div>
+
+<script>
+    function getIconHTML(itemName) {
+        const slug = itemName.toLowerCase().replace(/[\s\']+/g, '_');
+        const proxyUrl = `https://wsrv.nl/?url=palworld.gg/images/items/${slug}.png`;
+        const initials = itemName.substring(0, 2).toUpperCase();
+        const fallbackSVG = `<svg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'><rect width='32' height='32' rx='4' fill='%232c2520' stroke='%234a3f35' stroke-width='2'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23a09387' font-size='12' font-family='sans-serif' font-weight='bold'>${initials}</text></svg>`;
+        
+        return `<img src="${proxyUrl}" 
+                     style="width: 100%; height: 100%; object-fit: contain;" 
+                     alt="${itemName}" 
+                     onerror="this.onerror=null; this.src='data:image/svg+xml,${fallbackSVG}';">`;
+    }
+
+    const recipes = {
+        "AI Core": {
+            materials: [
+                { name: "Computer", qty: 5 },
+                { name: "Soralite Ingot", qty: 10 },
+                { name: "Thermal Core", qty: 2 },
+                { name: "Ancient Civilization Core", qty: 1 }
+            ]
+        },
+        "Computer": {
+            materials: [
+                { name: "Circuit Board", qty: 2 },
+                { name: "Bio Battery", qty: 2 },
+                { name: "Polymer", qty: 1 }
+            ]
+        },
+        "Soralite Ingot": {
+            materials: [
+                { name: "Soralite Ore", qty: 2 },
+                { name: "Paldium Fragment", qty: 1 }
+            ]
+        },
+        "Thermal Core": {
+            materials: [
+                { name: "Flame Organ", qty: 5 },
+                { name: "Refined Ingot", qty: 3 },
+                { name: "Pal Fluids", qty: 1 }
+            ]
+        },
+        "Circuit Board": {
+            materials: [
+                { name: "Pure Quartz", qty: 4 },
+                { name: "Polymer", qty: 2 }
+            ]
+        },
+        "Bio Battery": {
+            materials: [
+                { name: "Electric Organ", qty: 5 },
+                { name: "High Quality Pal Oil", qty: 3 }
+            ]
+        },
+        "Polymer": {
+            materials: [
+                { name: "High Quality Pal Oil", qty: 2 }
+            ]
+        },
+        "Carbon Fiber": {
+            materials: [
+                { name: "Coal", qty: 2 }
+            ]
+        },
+        "Cement": {
+            materials: [
+                { name: "Stone", qty: 50 },
+                { name: "Bone", qty: 1 },
+                { name: "Pal Fluids", qty: 1 }
+            ]
+        },
+        "Gunpowder": {
+            materials: [
+                { name: "Charcoal", qty: 2 },
+                { name: "Sulfur", qty: 1 }
+            ]
+        },
+        "Charcoal": {
+            materials: [
+                { name: "Wood", qty: 2 }
+            ]
+        },
+        "Ingot": {
+            materials: [
+                { name: "Ore", qty: 2 }
+            ]
+        },
+        "Refined Ingot": {
+            materials: [
+                { name: "Ore", qty: 2 },
+                { name: "Coal", qty: 2 }
+            ]
+        },
+        "Pal Metal Ingot": {
+            materials: [
+                { name: "Ore", qty: 4 },
+                { name: "Paldium Fragment", qty: 2 }
+            ]
+        },
+        "Plasteel": {
+            materials: [
+                { name: "Crude Oil", qty: 5 },
+                { name: "Paldium Fragment", qty: 5 },
+                { name: "Ore", qty: 10 }
+            ]
+        },
+        "Pal Sphere": {
+            materials: [
+                { name: "Paldium Fragment", qty: 1 },
+                { name: "Wood", qty: 3 },
+                { name: "Stone", qty: 3 }
+            ]
+        },
+        "Mega Sphere": {
+            materials: [
+                { name: "Paldium Fragment", qty: 1 },
+                { name: "Ingot", qty: 1 },
+                { name: "Wood", qty: 5 },
+                { name: "Stone", qty: 5 }
+            ]
+        },
+        "Giga Sphere": {
+            materials: [
+                { name: "Paldium Fragment", qty: 2 },
+                { name: "Ingot", qty: 2 },
+                { name: "Wood", qty: 7 },
+                { name: "Stone", qty: 7 }
+            ]
+        },
+        "Hyper Sphere": {
+            materials: [
+                { name: "Paldium Fragment", qty: 3 },
+                { name: "Ingot", qty: 3 },
+                { name: "Wood", qty: 10 },
+                { name: "Cement", qty: 2 }
+            ]
+        },
+        "Ultra Sphere": {
+            materials: [
+                { name: "Paldium Fragment", qty: 5 },
+                { name: "Refined Ingot", qty: 5 },
+                { name: "Carbon Fiber", qty: 2 },
+                { name: "Cement", qty: 3 }
+            ]
+        },
+        "Legendary Sphere": {
+            materials: [
+                { name: "Paldium Fragment", qty: 10 },
+                { name: "Pal Metal Ingot", qty: 5 },
+                { name: "Carbon Fiber", qty: 3 },
+                { name: "Cement", qty: 5 }
+            ]
+        },
+        "Radar Sphere": {
+            materials: [
+                { name: "Paldium Fragment", qty: 20 },
+                { name: "Plasteel", qty: 10 },
+                { name: "Carbon Fiber", qty: 5 }
+            ]
+        },
+        "Arrow": {
+            materials: [
+                { name: "Wood", qty: 1 },
+                { name: "Stone", qty: 1 }
+            ]
+        },
+        "Coarse Ammo": {
+            materials: [
+                { name: "Ingot", qty: 1 },
+                { name: "Gunpowder", qty: 1 }
+            ]
+        },
+        "Handgun Ammo": {
+            materials: [
+                { name: "Ingot", qty: 1 },
+                { name: "Gunpowder", qty: 1 }
+            ]
+        },
+        "Rifle Ammo": {
+            materials: [
+                { name: "Refined Ingot", qty: 1 },
+                { name: "Gunpowder", qty: 2 }
+            ]
+        },
+        "Shotgun Shells": {
+            materials: [
+                { name: "Refined Ingot", qty: 1 },
+                { name: "Gunpowder", qty: 3 }
+            ]
+        },
+        "Assault Rifle Ammo": {
+            materials: [
+                { name: "Refined Ingot", qty: 1 },
+                { name: "Gunpowder", qty: 2 }
+            ]
+        },
+        "Rocket Ammo": {
+            materials: [
+                { name: "Pal Metal Ingot", qty: 1 },
+                { name: "Gunpowder", qty: 5 }
+            ]
+        }
+    };
+
+    let activeItem = "AI Core";
+    let baseTotals = {};
+
+    const searchInput = document.getElementById('item-search');
+    const searchDropdown = document.getElementById('search-dropdown');
+    const qtyInput = document.getElementById('item-qty');
+    const selectedIcon = document.getElementById('selected-item-icon');
+
+    function initSearch() {
+        searchInput.value = activeItem;
+        selectedIcon.innerHTML = getIconHTML(activeItem);
+
+        searchInput.addEventListener('focus', () => renderDropdown(searchInput.value));
+        searchInput.addEventListener('input', (e) => renderDropdown(e.target.value));
+        searchInput.addEventListener('click', () => {
+            if(searchDropdown.style.display !== 'block') renderDropdown(searchInput.value);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-container')) searchDropdown.style.display = 'none';
+        });
+
+        qtyInput.addEventListener('input', calculate);
+    }
+
+    function renderDropdown(filterText = "") {
+        searchDropdown.innerHTML = '';
+        const query = filterText.toLowerCase().trim();
+        const matches = Object.keys(recipes).filter(item => item.toLowerCase().includes(query));
+
+        if (matches.length === 0) {
+            searchDropdown.style.display = 'none';
+            return;
+        }
+
+        matches.forEach(itemName => {
+            const div = document.createElement('div');
+            div.className = 'dropdown-item';
+            div.innerHTML = `<div class="item-icon-frame" style="width:24px; height:24px;">${getIconHTML(itemName)}</div><span>${itemName}</span>`;
+            div.addEventListener('click', () => {
+                activeItem = itemName;
+                searchInput.value = itemName;
+                selectedIcon.innerHTML = getIconHTML(itemName);
+                searchDropdown.style.display = 'none';
+                calculate();
+            });
+            searchDropdown.appendChild(div);
+        });
+        searchDropdown.style.display = 'block';
+    }
+
+    function calculate() {
+        const qty = parseInt(qtyInput.value) || 1;
+        baseTotals = {};
+
+        const canvas = document.getElementById('tree-canvas');
+        canvas.style.transform = 'scale(1)'; 
+        canvas.innerHTML = '';
+
+        const rootBranch = renderBranch(activeItem, qty, true);
+        canvas.appendChild(rootBranch);
+
+        const summaryRow = document.getElementById('summary-row');
+        summaryRow.innerHTML = '';
+        Object.keys(baseTotals).sort().forEach(rawName => {
+            summaryRow.innerHTML += `
+                <div class="cost-badge">
+                    <div class="node-icon">${getIconHTML(rawName)}</div>
+                    <span>${rawName}</span>
+                    <span class="cost-val">[x${baseTotals[rawName].toLocaleString()}]</span>
+                </div>
+            `;
+        });
+        
+        fixConnectingLines();
+        adjustTreeScaling();
+    }
+
+    function renderBranch(itemName, quantity, isRoot = false) {
+        const branch = document.createElement('div');
+        branch.className = `tree-branch ${isRoot ? 'is-root' : ''}`;
+
+        const recipe = recipes[itemName];
+        const hasChildren = recipe && recipe.materials && recipe.materials.length > 0;
+
+        const nodeDiv = document.createElement('div');
+        nodeDiv.className = `craft-node ${hasChildren ? 'has-children' : ''}`;
+        nodeDiv.innerHTML = `
+            <div class="node-icon">${getIconHTML(itemName)}</div>
+            <div class="node-info">
+                <span class="node-name">${itemName}</span>
+                <span class="node-count">[x${quantity.toLocaleString()}]</span>
+            </div>
+        `;
+        branch.appendChild(nodeDiv);
+
+        if (!hasChildren) {
+            baseTotals[itemName] = (baseTotals[itemName] || 0) + quantity;
+        } else {
+            const container = document.createElement('div');
+            container.className = 'children-container';
+
+            recipe.materials.forEach(subItem => {
+                const subQty = subItem.qty * quantity;
+                const childBranch = renderBranch(subItem.name, subQty, false);
+                container.appendChild(childBranch);
+            });
+
+            branch.appendChild(container);
+        }
+
+        return branch;
+    }
+
+    function fixConnectingLines() {
+        document.querySelectorAll('.children-container').forEach(container => {
+            const oldLine = container.querySelector('.bridge-line');
+            if (oldLine) oldLine.remove();
+
+            const children = Array.from(container.children).filter(c => c.classList.contains('tree-branch'));
+            if (children.length === 0) return;
+            
+            const firstChild = children[0];
+            const lastChild = children[children.length - 1];
+            
+            const firstRect = firstChild.getBoundingClientRect();
+            const lastRect = lastChild.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            
+            const leftOffset = (firstRect.left + firstRect.width / 2) - containerRect.left;
+            const rightOffset = containerRect.right - (lastRect.left + lastRect.width / 2);
+            
+            const line = document.createElement('div');
+            line.className = 'bridge-line';
+            line.style.position = 'absolute';
+            line.style.top = '0';
+            line.style.left = `${leftOffset}px`;
+            line.style.right = `${rightOffset}px`;
+            line.style.height = '2px';
+            line.style.backgroundColor = 'var(--line-color)';
+            
+            container.appendChild(line);
+        });
+    }
+
+    function adjustTreeScaling() {
+        const viewport = document.querySelector('.tree-viewport');
+        const canvas = document.getElementById('tree-canvas');
+        if (!viewport || !canvas) return;
+
+        const viewportWidth = viewport.offsetWidth - 20; 
+        const canvasWidth = canvas.scrollWidth;
+
+        if (canvasWidth > viewportWidth && canvasWidth > 0) {
+            const scaleFactor = viewportWidth / canvasWidth;
+            canvas.style.transform = `scale(${scaleFactor})`;
+            viewport.style.height = `${canvas.offsetHeight * scaleFactor + 40}px`;
+        } else {
+            canvas.style.transform = 'scale(1)';
+            viewport.style.height = 'auto';
+        }
+    }
+
+    window.addEventListener('resize', () => {
+        const canvas = document.getElementById('tree-canvas');
+        canvas.style.transform = 'scale(1)';
+        fixConnectingLines();
+        adjustTreeScaling();
+    });
+
+    window.onload = () => {
+        initSearch();
+        calculate();
+    };
+</script>
+
+</body>
+</html>
